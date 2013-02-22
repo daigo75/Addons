@@ -35,7 +35,8 @@ class VotingPlugin extends Gdn_Plugin {
       $Conf = new ConfigurationModule($Sender);
 		$Conf->Initialize(array(
 			'Plugins.Voting.ModThreshold1' => array('Type' => 'int', 'Control' => 'TextBox', 'Default' => -10, 'Description' => 'The vote that will flag a post for moderation.'),
-			'Plugins.Voting.ModThreshold2' => array('Type' => 'int', 'Control' => 'TextBox', 'Default' => -20, 'Description' => 'The vote that will remove a post to the moderation queue.')
+			'Plugins.Voting.HideLowScoreComments' => array('Type' => 'int', 'Control' => 'CheckBox', 'Default' => 1, 'Description' => 'Hide Comments whose Score gets below the above value.'),
+			'Plugins.Voting.ModThreshold2' => array('Type' => 'int', 'Control' => 'TextBox', 'Default' => -20, 'Description' => 'The vote that will remove a post to the moderation queue.'),
 		));
 
      $Sender->AddSideMenu('dashboard/settings/voting');
@@ -177,6 +178,38 @@ class VotingPlugin extends Gdn_Plugin {
    }
 
 	/**
+	 * Hides comments having a low score, and exposes two labels that allow the
+	 * User to display them, if he likes.
+	 *
+	 * @param Sender The Sender that issued the request.
+	 * @return void.
+	 */
+	protected function HideLowScoreComment($Sender) {
+		$Comment = GetValue('Object', $Sender->EventArguments);
+
+		//var_dump($Comment);
+		if(intval($Comment->Score) <= C('Plugins.Voting.ModThreshold1')) {
+			$Sender->EventArguments['CssClass'] .= ' Hidden';
+
+			echo "<li class=\"Item Voting\">";
+			echo Wrap(T(sprintf('Comment #%d was hidden due its low score.', $Comment->CommentID)),
+								'span',
+								array('class' => 'HiddenCommentNote',));
+			echo Wrap(T('Show Comment'),
+								'label',
+								array('id' => sprintf('ShowComment_%d', $Comment->CommentID),
+											'class' => 'ShowComment',
+											'for' => sprintf('Comment_%d', $Comment->CommentID),));
+			echo Wrap(T('Hide Comment'),
+								'label',
+								array('id' => sprintf('HideComment_%d', $Comment->CommentID),
+											'class' => 'HideComment Hidden',
+											'for' => sprintf('Comment_%d', $Comment->CommentID),));
+			echo "</li>";
+		}
+	}
+
+	/**
 	 * Insert sorting tabs after first comment.
 	 */
 	public function DiscussionController_BeforeCommentDisplay_Handler($Sender) {
@@ -201,6 +234,11 @@ class VotingPlugin extends Gdn_Plugin {
 		</li>
 		<?php
       $Sender->VoteHeaderWritten = TRUE;
+		}
+
+		if(GetValue('Type', $Sender->EventArguments) == 'Comment' &&
+			 C('Plugins.Voting.HideLowScoreComments', 0) == 1) {
+			$this->HideLowScoreComment($Sender);
 		}
 	}
 
