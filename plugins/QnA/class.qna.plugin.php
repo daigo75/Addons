@@ -18,7 +18,7 @@ $PluginInfo['QnA'] = array(
 
 /**
  * Adds Question & Answer format to Vanilla.
- * 
+ *
  * You can set Plugins.QnA.UseBigButtons = TRUE in config to separate 'New Discussion'
  * and 'Ask Question' into "separate" forms each with own big button in Panel.
  */
@@ -34,13 +34,13 @@ class QnAPlugin extends Gdn_Plugin {
    public function Structure() {
       Gdn::Structure()
          ->Table('Discussion');
-      
+
       $QnAExists = Gdn::Structure()->ColumnExists('QnA');
       $DateAcceptedExists = Gdn::Structure()->ColumnExists('DateAccepted');
-      
+
       Gdn::Structure()
          ->Column('QnA', array('Unanswered', 'Answered', 'Accepted', 'Rejected'), NULL)
-         ->Column('DateAccepted', 'datetime', TRUE) // The 
+         ->Column('DateAccepted', 'datetime', TRUE) // The
          ->Column('DateOfAnswer', 'datetime', TRUE) // The time to answer an accepted question.
          ->Set();
 
@@ -59,7 +59,7 @@ class QnAPlugin extends Gdn_Plugin {
          'ActivityType',
          array('AllowComments' => '0', 'RouteCode' => 'answer', 'Notify' => '1', 'Public' => '0', 'ProfileHeadline' => '', 'FullHeadline' => ''),
          array('Name' => 'AnswerAccepted'), TRUE);
-      
+
       if ($QnAExists && !$DateAcceptedExists) {
          // Default the date accepted to the accepted answer's date.
          $Px = Gdn::Database()->DatabasePrefix;
@@ -68,7 +68,7 @@ class QnAPlugin extends Gdn_Plugin {
          Gdn::SQL()->Update('Discussion')
             ->Set('DateOfAnswer', 'DateAccepted', FALSE, FALSE)
             ->Put();
-         
+
          Gdn::SQL()->Update('Comment c')
             ->Join('Discussion d', 'c.CommentID = d.DiscussionID')
             ->Set('c.DateAccepted', 'c.DateInserted', FALSE, FALSE)
@@ -98,14 +98,14 @@ class QnAPlugin extends Gdn_Plugin {
    public function Base_CommentOptions_Handler($Sender, $Args) {
       $Discussion = GetValue('Discussion', $Args);
       $Comment = GetValue('Comment', $Args);
-      
+
       if (!$Comment)
          return;
-      
+
       $CommentID = GetValue('CommentID', $Comment);
       if (!is_numeric($CommentID))
          return;
-      
+
       if (!$Discussion) {
          static $DiscussionModel = NULL;
          if ($DiscussionModel === NULL)
@@ -119,7 +119,7 @@ class QnAPlugin extends Gdn_Plugin {
       // Check permissions.
       $CanAccept = Gdn::Session()->CheckPermission('Garden.Moderation.Manage');
       $CanAccept |= Gdn::Session()->UserID == GetValue('InsertUserID', $Discussion) && Gdn::Session()->UserID != GetValue('InsertUserID', $Comment);
-      
+
       if (!$CanAccept)
          return;
 
@@ -169,7 +169,7 @@ class QnAPlugin extends Gdn_Plugin {
          $Comment['InsertUserID'],
          'QuestionAnswer',
          Anchor(Gdn_Format::Text($Discussion['Name']), "discussion/comment/$CommentID/#Comment_$CommentID"),
-         $Discussion['InsertUserID'], 
+         $Discussion['InsertUserID'],
          '',
          "/discussion/comment/$CommentID/#Comment_$CommentID");
       $ActivityModel->QueueNotification($ActivityID, '', 'first');
@@ -219,25 +219,25 @@ class QnAPlugin extends Gdn_Plugin {
       if (isset($QnA)) {
          $DiscussionSet = array('QnA' => $QnA);
          $CommentSet = array('QnA' => $QnA);
-         
+
          if ($QnA == 'Accepted') {
             $CommentSet['DateAccepted'] = Gdn_Format::ToDateTime();
             $CommentSet['AcceptedUserID'] = Gdn::Session()->UserID;
-            
+
             if (!$Discussion['DateAccepted']) {
                $DiscussionSet['DateAccepted'] = Gdn_Format::ToDateTime();
                $DiscussionSet['DateOfAnswer'] = $Comment['DateInserted'];
             }
          }
-         
+
          // Update the comment.
          Gdn::SQL()->Put('Comment', $CommentSet, array('CommentID' => $Comment['CommentID']));
 
          // Update the discussion.
          if ($Discussion['QnA'] != $QnA && (!$Discussion['QnA'] || in_array($Discussion['QnA'], array('Unanswered', 'Answered', 'Rejected'))))
             Gdn::SQL()->Put(
-               'Discussion', 
-               $DiscussionSet, 
+               'Discussion',
+               $DiscussionSet,
                array('DiscussionID' => $Comment['DiscussionID']));
 
          // Record the activity.
@@ -301,7 +301,7 @@ class QnAPlugin extends Gdn_Plugin {
          $CssClass = ' class="Active"';
       else
          $CssClass = '';
-      
+
       $Count = Gdn::Cache()->Get('QnA-UnansweredCount');
       if ($Count === Gdn_Cache::CACHEOP_FAILURE)
          $Count = ' <span class="Popin Count" rel="/discussions/unansweredcount">';
@@ -321,11 +321,11 @@ class QnAPlugin extends Gdn_Plugin {
       $Sender->Index(GetValue(0, $Args, 'p1'));
       $this->InUnanswered = TRUE;
    }
-   
+
    /**
     *
     * @param DiscussionsController $Sender
-    * @param type $Args 
+    * @param type $Args
     */
    public function DiscussionsController_Render_Before($Sender, $Args) {
       if (strcasecmp($Sender->RequestMethod, 'unanswered') == 0) {
@@ -336,7 +336,7 @@ class QnAPlugin extends Gdn_Plugin {
          $QuestionModule = new NewQuestionModule($Sender, 'plugins/QnA');
          $Sender->AddModule($QuestionModule);
       }
-      
+
       if (isset($this->InUnanswered)) {
          // Remove announcements that aren't questions...
          $Announcements = $Sender->Data('Announcements');
@@ -429,7 +429,7 @@ class QnAPlugin extends Gdn_Plugin {
          Gdn::Locale()->SetTranslation('Discussion Title', T('Question Title'));
          Gdn::Locale()->SetTranslation('Post Discussion', T('Ask Question'));
       }
-      
+
       if (!C('Plugins.QnA.UseBigButtons'))
          include $Sender->FetchViewLocation('QnAPost', '', 'plugins/QnA');
    }
@@ -449,7 +449,7 @@ class QnAPlugin extends Gdn_Plugin {
          $Sender->SetData('Title', T('Ask a Question'));
       }
    }
-   
+
    /**
     * Add 'Ask a Question' button if using BigButtons.
     */
@@ -459,7 +459,7 @@ class QnAPlugin extends Gdn_Plugin {
          $Sender->AddModule($QuestionModule);
       }
    }
-   
+
    /**
     * Add 'Ask a Question' button if using BigButtons.
     */
@@ -469,13 +469,13 @@ class QnAPlugin extends Gdn_Plugin {
          $Sender->AddModule($QuestionModule);
       }
    }
-   
-   
-   /** 
-    * Add the "new question" button after the new discussion button. 
+
+
+   /**
+    * Add the "new question" button after the new discussion button.
     */
    public function Base_BeforeNewDiscussionButton_Handler($Sender) {
       $NewDiscussionModule = &$Sender->EventArguments['NewDiscussionModule'];
       $NewDiscussionModule->AddButton(T('New Question'), 'post/discussion?Type=Question');
-   }   
+   }
 }

@@ -103,13 +103,7 @@ ul.Discussions div.ItemContent a.Title {
 ul.DataList li.Item {
 	position: relative;
 }
-ul.Discussions .Options {
-	float:none;
-	width:auto;
-	position: absolute;
-	top: 2px;
-	right: 215px;
-}
+
 ul.DataList div.Meta {
 	z-index: 5;
 }
@@ -153,7 +147,7 @@ ul.MessageList div.Meta span.Votes span {
 	/* color: #000; */
 	font-weight: bold;
 	font-size: 18px;
-	line-height: 1.2;	
+	line-height: 1.2;
 }
 .Voter span {
    font-size: 13px;
@@ -186,7 +180,7 @@ span.Votes a.VoteDown {
 span.Votes a:hover {
 	background: #013B76;
 	color: #fff;
-	text-shadow: 0 0px 5px #fff;	
+	text-shadow: 0 0px 5px #fff;
 }
 */
 
