@@ -10,6 +10,7 @@
  *  1.5.6   Add hook for discussions/download.
  *  1.6     Fix the file upload plugin for external storage.
  *          Add file extensions to the non-image icons.
+ *  1.7     Add support for discussions and comments placed in moderation queue (Lincoln, Nov 2012)
  * 
  * @author Tim Gunter <tim@vanillaforums.com>
  * @copyright 2003 Vanilla Forums, Inc
@@ -20,7 +21,7 @@
 // Define the plugin:
 $PluginInfo['FileUpload'] = array(
    'Description' => 'Images and files may be attached to discussions and comments.',
-   'Version' => '1.6',
+   'Version' => '1.7.0',
    'RequiredApplications' => array('Vanilla' => '2.1a'),
    'RequiredTheme' => FALSE, 
    'RequiredPlugins' => FALSE,
@@ -50,6 +51,10 @@ class FileUploadPlugin extends Gdn_Plugin {
       $this->CanDownload = Gdn::Session()->CheckPermission('Plugins.Attachments.Download.Allow', FALSE);
    }
    
+   public function AssetModel_StyleCss_Handler($Sender) {
+      $Sender->AddCssFile('fileupload.css', 'plugins/FileUpload');
+   }
+   
    public function MediaCache() {
       if ($this->_MediaCache === NULL) {
          $this->CacheAttachedMedia(Gdn::Controller());
@@ -74,22 +79,23 @@ class FileUploadPlugin extends Gdn_Plugin {
    /**
     * Adds "Media" menu option to the Forum menu on the dashboard.
     */
-   public function Base_GetAppSettingsMenuItems_Handler($Sender) {
+   /*public function Base_GetAppSettingsMenuItems_Handler($Sender) {
       $Menu = &$Sender->EventArguments['SideMenu'];
       $Menu->AddItem('Forum', 'Forum');
       $Menu->AddLink('Forum', 'Media', 'plugin/fileupload', 'Garden.Settings.Manage');
-   }
+   }*/
    
    public function PluginController_FileUpload_Create($Sender) {
       $Sender->Title('FileUpload');
       $Sender->AddSideMenu('plugin/fileupload');
+      Gdn_Theme::Section('Dashboard');
       $Sender->Form = new Gdn_Form();
       
       $this->EnableSlicing($Sender);
       $this->Dispatch($Sender, $Sender->RequestArgs);
    }
    
-   public function Controller_Toggle($Sender) {
+   /*public function Controller_Toggle($Sender) {
       $FileUploadStatus = Gdn::Config('Plugins.FileUpload.Enabled', FALSE);
 
       $Validation = new Gdn_Validation();
@@ -109,14 +115,11 @@ class FileUploadPlugin extends Gdn_Plugin {
          'FileUploadStatus'  => $FileUploadStatus
       ));
       $Sender->Render($this->GetView('toggle.php'));
-   }
+   }*/
    
-   public function Controller_Index($Sender) {
-      $Sender->AddCssFile('fileupload.css', 'plugins/FileUpload');
-      $Sender->AddCssFile('admin.css');
-      
+   /*public function Controller_Index($Sender) {
       $Sender->Render('FileUpload', '', 'plugins/FileUpload');
-   }
+   }*/
    
    public function Controller_Delete($Sender) {
       list($Action, $MediaID) = $Sender->RequestArgs;
@@ -129,9 +132,11 @@ class FileUploadPlugin extends Gdn_Plugin {
       );
       
       $Media = $this->MediaModel()->GetID($MediaID);
-      
+      $ForeignTable = GetValue('ForeignTable', $Media);
+      $Permission = FALSE;
+
       // Get the category so we can figure out whether or not the user has permission to delete.
-      if (GetValue('ForeignTable', $Media) == 'discussion') {
+      if ($ForeignTable == 'discussion') {
          $PermissionCategoryID = Gdn::SQL()
             ->Select('c.PermissionCategoryID')
             ->From('Discussion d')
@@ -139,7 +144,7 @@ class FileUploadPlugin extends Gdn_Plugin {
             ->Where('d.DiscussionID', GetValue('ForeignID', $Media))
             ->Get()->Value('PermissionCategoryID');
          $Permission = 'Vanilla.Discussions.Edit';
-      } else {
+      } elseif ($ForeignTable == 'comment') {
          $PermissionCategoryID = Gdn::SQL()
             ->Select('c.PermissionCategoryID')
             ->From('Comment cm')
@@ -207,7 +212,6 @@ class FileUploadPlugin extends Gdn_Plugin {
    protected function PrepareController($Controller) {
       if (!$this->IsEnabled()) return;
       
-      $Controller->AddCssFile('fileupload.css', 'plugins/FileUpload');
       $Controller->AddJsFile('fileupload.js', 'plugins/FileUpload');
       $Controller->AddDefinition('apcavailable',self::ApcAvailable());
       $Controller->AddDefinition('uploaderuniq',uniqid(''));
@@ -229,7 +233,7 @@ class FileUploadPlugin extends Gdn_Plugin {
     * @see FileUploadPlugin::DrawAttachFile
     * @return void
     */
-   public function PostController_BeforeFormButtons_Handler($Sender) {
+   public function PostController_AfterDiscussionFormOptions_Handler($Sender) {
       if (!is_null($Discussion = GetValue('Discussion',$Sender, NULL))) {
          $Sender->EventArguments['Type'] = 'Discussion';
          $Sender->EventArguments['Discussion'] = $Discussion;
@@ -287,7 +291,9 @@ class FileUploadPlugin extends Gdn_Plugin {
       }
       
       if (count($CommentIDList)) {
-         $MediaData = $this->MediaModel()->PreloadDiscussionMedia($Sender->DiscussionID, $CommentIDList);
+         $DiscussionID = $Sender->Data('Discussion.DiscussionID');
+         
+         $MediaData = $this->MediaModel()->PreloadDiscussionMedia($DiscussionID, $CommentIDList);
       } else {
          $MediaData = FALSE;
       }
@@ -411,16 +417,18 @@ class FileUploadPlugin extends Gdn_Plugin {
    }
    
    /**
-    * PostController_AfterCommentSave_Handler function.
+    * Attach files to a comment during save.
     * 
     * @access public
-    * @param mixed $Sender
-    * @return void
+    * @param object $Sender
+    * @param array $Args
     */
-   public function PostController_AfterCommentSave_Handler($Sender) {
-      if (!$Sender->EventArguments['Comment']) return;
+   public function PostController_AfterCommentSave_Handler($Sender, $Args) {
+      if (!$Args['Comment']) return;
       
-      $CommentID = $Sender->EventArguments['Comment']->CommentID;
+      $CommentID = $Args['Comment']->CommentID;
+      if (!$CommentID) return;
+      
       $AttachedFilesData = Gdn::Request()->GetValue('AttachedUploads');
       $AllFilesData = Gdn::Request()->GetValue('AllUploads');
       
@@ -428,20 +436,66 @@ class FileUploadPlugin extends Gdn_Plugin {
    }
    
    /**
-    * PostController_AfterDiscussionSave_Handler function.
+    * Attach files to a discussion during save.
     * 
     * @access public
-    * @param mixed $Sender
-    * @return void
+    * @param object $Sender
+    * @param array $Args
     */
-   public function PostController_AfterDiscussionSave_Handler($Sender) {
-      if (!$Sender->EventArguments['Discussion']) return;
+   public function PostController_AfterDiscussionSave_Handler($Sender, $Args) {
+      if (!$Args['Discussion']) return;
       
-      $DiscussionID = $Sender->EventArguments['Discussion']->DiscussionID;
+      $DiscussionID = $Args['Discussion']->DiscussionID;
+      if (!$DiscussionID) return;
+      
       $AttachedFilesData = Gdn::Request()->GetValue('AttachedUploads');
       $AllFilesData = Gdn::Request()->GetValue('AllUploads');
       
       $this->AttachAllFiles($AttachedFilesData, $AllFilesData, $DiscussionID, 'discussion');
+   }
+   
+   /**
+    * Attach files to a log entry; used when new content is sent to moderation queue.
+    * 
+    * @access public
+    * @param object $Sender
+    * @param array $Args
+    */
+   public function LogModel_AfterInsert_Handler($Sender, $Args) {      
+      // Only trigger if logging unapproved discussion or comment
+      $Log = GetValue('Log', $Args);
+      $Type = strtolower(GetValue('RecordType', $Log));
+      $Operation = GetValue('Operation', $Log);
+      if (!in_array($Type, array('discussion', 'comment')) || $Operation != 'Pending') 
+         return;
+      
+      // Attach file to the log entry
+      $LogID = GetValue('LogID', $Args);
+      $AttachedFilesData = Gdn::Request()->GetValue('AttachedUploads');
+      $AllFilesData = Gdn::Request()->GetValue('AllUploads');
+      
+      $this->AttachAllFiles($AttachedFilesData, $AllFilesData, $LogID, 'log');
+   }
+   
+   /**
+    * Attach files to record created by restoring a log entry.
+    * 
+    * This happens when a discussion or comment is approved.
+    * 
+    * @access public
+    * @param object $Sender
+    * @param array $Args
+    */
+   public function LogModel_AfterRestore_Handler($Sender, $Args) {
+      $Log = GetValue('Log', $Args);
+      
+      // Only trigger if restoring discussion or comment
+      $Type = strtolower(GetValue('RecordType', $Log));
+      if (!in_array($Type, array('discussion', 'comment')))
+         return;
+      
+      // Reassign media records from log entry to newly inserted content
+      $this->MediaModel()->Reassign(GetValue('LogID', $Log), 'log', GetValue('InsertID', $Args), $Type);
    }
    
    /**
@@ -549,13 +603,13 @@ class FileUploadPlugin extends Gdn_Plugin {
    }
    
    /**
-    * AttachFile function.
+    * Attach a file to a foreign table and ID.
     * 
     * @access protected
-    * @param mixed $FileID
-    * @param mixed $ForeignID
-    * @param mixed $ForeignType
-    * @return void
+    * @param int $FileID
+    * @param int $ForeignID
+    * @param string $ForeignType Lowercase.
+    * @return bool Whether attach was successful.
     */
    protected function AttachFile($FileID, $ForeignID, $ForeignType) {
       $Media = $this->MediaModel()->GetID($FileID);
@@ -939,7 +993,7 @@ class FileUploadPlugin extends Gdn_Plugin {
          ->Column('Size', 'int(11)')
          ->Column('ImageWidth', 'usmallint', NULL)
          ->Column('ImageHeight', 'usmallint', NULL)
-         ->Column('StorageMethod', 'varchar(24)')
+         ->Column('StorageMethod', 'varchar(24)', 'local')
          ->Column('Path', 'varchar(255)')
          
          ->Column('ThumbWidth', 'usmallint', NULL)

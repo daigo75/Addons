@@ -7,7 +7,7 @@ function Gdn_Quotes() {
    Gdn_Quotes.prototype.Prepare = function() {
    
       // Attach quote event to each Quote button, and return false to prevent link follow
-      $('span.CommentQuote a').livequery('click', jQuery.proxy(function(event){
+      $('a.ReactButton.Quote').livequery('click', jQuery.proxy(function(event){
          var QuoteLink = $(event.target);
          var ObjectID = QuoteLink.attr('href').split('/').pop();
          this.Quote(ObjectID, QuoteLink);
@@ -255,39 +255,16 @@ function Gdn_Quotes() {
          this.RemoveSpinner();
       } else {return;}
       
-      switch (Data.Quote.format) {
-         case 'Wysiwyg':
-         case 'Html':   // HTML
-            var Append = '<blockquote class="Quote" rel="'+Data.Quote.authorname+'">'+Data.Quote.body+'</blockquote>'+"\n";
-            break;
-            
-         case 'BBCode':
-            var QuoteAuthor = Data.Quote.authorname;
-            if (Data.Quote.type && Data.Quote.type == 'comment')
-               if (Data.Quote.typeid) QuoteAuthor = QuoteAuthor+";"+Data.Quote.typeid;
-            
-            var Append = '[quote="'+QuoteAuthor+'"]'+Data.Quote.body+'[/quote]'+"\n";
-            break;
-         
-         case 'Markdown':
-         case 'Display':
-         case 'Text':   // Plain
-            var Append = '> '+Data.Quote.authorname+" said:\n";
-            Append = Append+'> '+Data.Quote.body.replace(/(\n)/g, "$1> ")+"\n";
-            break;
-            
-         default:
-            var Append = Data.Quote.body;
-            break;
-      
-      }
-      
-      this.ApplyQuoteText(Append);
+      this.ApplyQuoteText(Data.Quote.body);
    }
    
    Gdn_Quotes.prototype.ApplyQuoteText = function(QuoteText) {
-      QuoteText = QuoteText+"\n";
       var Editor = this.GetEditor();
+      
+      // First try and throw an event.
+      var r = jQuery(Editor).trigger('appendHtml', QuoteText + "<br />");
+      
+      QuoteText = QuoteText+"\n";
       Editor.val(Editor.val() + QuoteText);
       
       switch (this.InsertMode) {

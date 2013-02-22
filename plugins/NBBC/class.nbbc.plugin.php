@@ -10,7 +10,7 @@
 
 $PluginInfo['NBBC'] = array(
     'Description' => 'Adapts The New BBCode Parser to work with Vanilla.',
-    'Version' => '1.0.7b',
+    'Version' => '1.0.8b',
     'RequiredApplications' => array('Vanilla' => '2.0.2a'),
     'RequiredTheme' => FALSE,
     'RequiredPlugins' => FALSE,
@@ -34,6 +34,28 @@ class NBBCPlugin extends Gdn_Plugin {
 
    /// PROPERTIES ///
    /// METHODS ///
+   
+   public function DoAttachment($bbcode, $action, $name, $default, $params, $content) {
+      $Medias = $this->Media();
+      $MediaID = $content;
+      if (isset($Medias[$MediaID])) {
+         $Media = $Medias[$MediaID];
+//         decho($Media, 'Media');
+         
+         $Src = htmlspecialchars(Gdn_Upload::Url(GetValue('Path', $Media)));
+         $Name = htmlspecialchars(GetValue('Name', $Media));
+         
+         if (GetValue('ImageWidth', $Media)) {
+            return <<<EOT
+<div class="Attachment Image"><img src="$Src" alt="$Name" /></div>
+EOT;
+         } else {
+            return Anchor($Name, $Src, 'Attachment File');
+         }
+      }
+      
+      return Anchor(T('Attachment not found.'), '#', 'Attachment NotFound');
+   }
 
    function DoImage($bbcode, $action, $name, $default, $params, $content) {
       if ($action == BBCODE_CHECK)
@@ -152,15 +174,50 @@ class NBBCPlugin extends Gdn_Plugin {
       $Result = $this->NBBC()->Parse($String);
       return $Result;
    }
+   
+   protected $_Media = NULL;
+   public function Media() {
+      if ($this->_Media === NULL) {
+         try {
+            $I = Gdn::PluginManager()->GetPluginInstance('FileUploadPlugin', Gdn_PluginManager::ACCESS_CLASSNAME);
+            $M = $I->MediaCache();
+         } catch (Exception $Ex) {
+            $M = array();
+         }
+         
+         $Media = array();
+         foreach ($M as $Key => $Data) {
+            foreach ($Data as $Row) {
+               $Media[$Row->MediaID] = $Row;
+            }
+         }
+         $this->_Media = $Media;
+      }
+      return $this->_Media;
+   }
 
    protected $_NBBC = NULL;
-
+   /**
+    *
+    * @return BBCode 
+    */
    public function NBBC() {
       if ($this->_NBBC === NULL) {
          require_once(dirname(__FILE__) . '/nbbc/nbbc.php');
          $BBCode = new $this->Class();
          $BBCode->smiley_url = Url('/plugins/NBBC/design/smileys');
          $BBCode->SetAllowAmpersand(TRUE);
+         
+         $BBCode->AddRule('attach', array(
+            'mode' => BBCODE_MODE_CALLBACK,
+            'method' => array($this, "DoAttachment"),
+            'class' => 'image',
+            'allow_in' => Array('listitem', 'block', 'columns', 'inline', 'link'),
+            'end_tag' => BBCODE_REQUIRED,
+            'content' => BBCODE_REQUIRED,
+            'plain_start' => "[image]",
+            'plain_content' => Array(),
+            ));
 
 
          $BBCode->AddRule('code', Array(
@@ -215,7 +272,7 @@ class NBBCPlugin extends Gdn_Plugin {
          
          $BBCode->AddRule('snapback', Array(
              'mode' => BBCODE_MODE_ENHANCED,
-             'template' => ' <a href="'.Url('/discussion/comment/{$_content/v}', TRUE).'" class="SnapBack">»</a> ',
+             'template' => ' <a href="'.Url('/discussion/comment/{$_content/v}#Comment_{$_content/v}', TRUE).'" class="SnapBack">»</a> ',
              'class' => 'code',
              'allow_in' => Array('listitem', 'block', 'columns'),
              'content' => BBCODE_VERBATIM,
