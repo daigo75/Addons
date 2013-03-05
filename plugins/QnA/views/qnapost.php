@@ -1,6 +1,6 @@
 <?php if (!defined('APPLICATION')) exit(); ?>
 <div class="QnA-Post">
-	<div class="P">
+	<div class="P YesScript">
 		 <?php echo T('You can either ask a question or start a discussion.', 'You can either ask a question or start a discussion. Choose what you want to do below.'); ?>
 	</div>
 	<style>.NoScript { display: none; }</style>
