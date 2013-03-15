@@ -554,6 +554,7 @@ class QnAPlugin extends Gdn_Plugin {
 		$this->UserCanPostQuestion = $this->CheckCategoryPermission('Plugins.QnA.CanPostQuestion',
 																																$PermissionCategoryID);
 
+		$Sender->AddDefinition('QnA_CategoryID', (int)$this->CategoryID);
 		$Sender->AddDefinition('QnA_UserCanPostFreely', (int)$this->UserCanPostFreely);
 		$Sender->AddDefinition('QnA_UserCanPostDiscussion', (int)$this->UserCanPostDiscussion);
 		$Sender->AddDefinition('QnA_UserCanPostQuestion', (int)$this->UserCanPostQuestion);
