@@ -8,7 +8,7 @@
 $PluginInfo['QnA'] = array(
 	'Name' => 'Q&A',
 	'Description' => 'Users may designate a discussion as a Question and then officially accept one or more of the comments as the answer.',
-	'Version' => '13.03.11',
+	'Version' => '13.03.14',
 	'RequiredApplications' => array('Vanilla' => '2.0.18'),
 	'MobileFriendly' => TRUE,
 	'Author' => 'Todd Burry',
@@ -27,18 +27,27 @@ $PluginInfo['QnA'] = array(
  * and 'Ask Question' into "separate" forms each with own big button in Panel.
  */
 class QnAPlugin extends Gdn_Plugin {
-	/// PROPERTIES ///
+	const DEFAULT_PERMISSION_CATEGORY_ID = -1;
 
-	/// METHODS ///
+	public function __construct() {
+		parent::__construct();
+	}
 
 	public function Setup() {
 		$this->Structure();
+
+		// Register the permissions associating them to the Categories
+		Gdn::PermissionModel()->Define(array('Plugins.QnA.CanPostQuestion',
+																				 'Plugins.QnA.CanPostDiscussion',
+																				 'Plugins.QnA.CanPostFreely',),
+																	 'tinyint',
+																	 'Category',
+																	 'PermissionCategoryID');
 
 		// Create Route to redirect calls to /discussions to /listdiscussions
 		Gdn::Router()->SetRoute('^post/discussion(/.*)?$',
 														'post/qnadiscussion$1',
 														'Internal');
-
 	}
 
 	/**
@@ -436,8 +445,8 @@ class QnAPlugin extends Gdn_Plugin {
 	 * @param array $Args
 	 */
 	public function PostController_BeforeFormInputs_Handler($Sender, $Args) {
-		$Sender->AddDefinition('QuestionTitle', T('Question Title'));
-		$Sender->AddDefinition('DiscussionTitle', T('Discussion Title'));
+		$Sender->AddDefinition('QuestionTitle', T('Title'));
+		$Sender->AddDefinition('DiscussionTitle', T('Title'));
 		$Sender->AddDefinition('QuestionButton', T('Ask Question'));
 		$Sender->AddDefinition('DiscussionButton', T('Post Discussion'));
 		$Sender->AddJsFile('qna.js', 'plugins/QnA');
@@ -445,7 +454,7 @@ class QnAPlugin extends Gdn_Plugin {
 		$Form = $Sender->Form;
 		$QuestionButton = !C('Plugins.QnA.UseBigButtons') || GetValue('Type', $_GET) == 'Question';
 		if ($Sender->Form->GetValue('Type') == 'Question' && $QuestionButton) {
-			Gdn::Locale()->SetTranslation('Discussion Title', T('Question Title'));
+			Gdn::Locale()->SetTranslation('Discussion Title', T('Title'));
 			Gdn::Locale()->SetTranslation('Post Discussion', T('Ask Question'));
 		}
 
@@ -464,8 +473,13 @@ class QnAPlugin extends Gdn_Plugin {
 			}
 		}
 
-		if ($Form->GetValue('Type') == 'Question' && $QuestionButton) {
+		if ($this->UserCanPostQuestion &&
+				($Form->GetValue('Type') == 'Question')
+				&& $QuestionButton) {
 			$Sender->SetData('Title', T('Ask a Question'));
+		}
+		else {
+			$Sender->SetData('Title', T('Start a new Discussion'));
 		}
 	}
 
@@ -507,9 +521,58 @@ class QnAPlugin extends Gdn_Plugin {
 	 */
 	private function CheckCategoryPermission($PermissionName, $CategoryID) {
 		return Gdn::Session()->CheckPermission($PermissionName,
-																					 TRUE,
+																					 false,
 																					 'Category',
 																					 $CategoryID);
+	}
+
+	/**
+	 * Return the Category ID to be used to check permissions. It can be different
+	 * from the Category ID, because, if Category doesn't have specific permissions,
+	 * the default ones (i.e. the ones from Category ID "-1") are taken.
+	 *
+	 * @param int CategoryID The ID of the Category for which to retrieve the
+	 * ID to be used to check the Permissions.
+	 * @return int The Category ID to be used to check the Permissions.
+	 */
+	private function GetPermissionCategoryID($CategoryID) {
+		if(empty($CategoryID)) {
+			return self::DEFAULT_PERMISSION_CATEGORY_ID;
+		}
+
+		return GetValue('PermissionCategoryID', CategoryModel::Categories($CategoryID));
+	}
+
+	protected function LoadUserPostingPermissions($Sender, $CategoryID) {
+		$PermissionCategoryID = $this->GetPermissionCategoryID($CategoryID);
+
+		// Retrieve the permissions for current category
+		$this->UserCanPostFreely = $this->CheckCategoryPermission('Plugins.QnA.CanPostFreely',
+																															$PermissionCategoryID);
+		$this->UserCanPostDiscussion = $this->CheckCategoryPermission('Plugins.QnA.CanPostDiscussion',
+																																	$PermissionCategoryID);
+		$this->UserCanPostQuestion = $this->CheckCategoryPermission('Plugins.QnA.CanPostQuestion',
+																																$PermissionCategoryID);
+
+		$Sender->AddDefinition('QnA_UserCanPostFreely', (int)$this->UserCanPostFreely);
+		$Sender->AddDefinition('QnA_UserCanPostDiscussion', (int)$this->UserCanPostDiscussion);
+		$Sender->AddDefinition('QnA_UserCanPostQuestion', (int)$this->UserCanPostQuestion);
+	}
+
+	private function _ValidateDiscussionType(Gdn_Form $Form) {
+		$PostType = $Form->GetFormValue('Type');
+
+			// Check if User can post a Question
+		if(($PostType == 'Question') &&
+			 !($this->UserCanPostQuestion || $this->UserCanPostFreely)) {
+			$Form->AddError(T('You are not allowed to post a Question in this Category.'));
+		}
+		else {
+			// Check if User can post a Discussion
+			if(!($this->UserCanPostDiscussion || $this->UserCanPostFreely)) {
+				$Form->AddError(T('You are not allowed to post a Discussion in this Category.'));
+			}
+		}
 	}
 
   /**
@@ -520,15 +583,10 @@ class QnAPlugin extends Gdn_Plugin {
    */
   public function PostController_QnaDiscussion_Create($Sender, $Args) {
 		$CategoryID = array_shift($Args);
-		$this->Category = $Category = CategoryModel::Categories($CategoryID);
+		// Add CategoryID as a Sender property to make it available during rendering
+		$this->CategoryID = $CategoryID;
 
-		// Retrieve the permission for current category
-		$this->UserCanPostFreely = $this->CheckCategoryPermission('Plugins.QnA.CanPostQuestion',
-																															$this->Category->PermissionCategoryID);
-		$this->UserCanPostDiscussion = $this->CheckCategoryPermission('Plugins.QnA.CanPostDiscussion',
-																																	$this->Category->PermissionCategoryID);
-		$this->UserCanPostQuestion = $this->CheckCategoryPermission('Plugins.QnA.CanPostQuestion',
-																																$this->Category->PermissionCategoryID);
+		$this->LoadUserPostingPermissions($Sender, $CategoryID);
 
 		$DiscussionModel = new DiscussionModel();
 
@@ -538,8 +596,9 @@ class QnAPlugin extends Gdn_Plugin {
 			// Just render page
 		}
 		else {
-			var_dump($Sender);die();
+			$this->_ValidateDiscussionType($Sender->Form);
 		}
+
 		$Sender->View = 'discussion';
 		$Sender->Discussion($CategoryID);
 	 }

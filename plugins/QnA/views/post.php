@@ -35,7 +35,7 @@ if (C('Vanilla.Categories.Use') && is_object($this->Category))
 		echo '</div>';
 
 		$this->FireEvent('AfterDiscussionFormOptions');
-		
+
       echo '<div class="Buttons">';
       $this->FireEvent('BeforeFormButtons');
       echo $this->Form->Button((property_exists($this, 'Discussion')) ? 'Save' : 'Ask Question', array('class' => 'Button Success DiscussionButton'));
