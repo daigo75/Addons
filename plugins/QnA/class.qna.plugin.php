@@ -44,9 +44,13 @@ class QnAPlugin extends Gdn_Plugin {
 																	 'Category',
 																	 'PermissionCategoryID');
 
-		// Create Route to redirect calls to /discussions to /listdiscussions
+		// Create Route to redirect calls to /discussion to /qnadiscussion
 		Gdn::Router()->SetRoute('^post/discussion(/.*)?$',
 														'post/qnadiscussion$1',
+														'Internal');
+		// Create Route to redirect calls to /editdiscussion to /qnaeditdiscussion
+		Gdn::Router()->SetRoute('^./*?post/editdiscussion(/.*)?$',
+														'post/qnaeditdiscussion$1',
 														'Internal');
 	}
 
@@ -57,6 +61,7 @@ class QnAPlugin extends Gdn_Plugin {
 	public function OnDisable() {
 		// Remove the Routes created by the Plugin.
 		Gdn::Router()->DeleteRoute('^post/discussion(/.*)?$');
+		Gdn::Router()->DeleteRoute('^post/editdiscussion(/.*)?$');
 	}
 
 	public function Structure() {
@@ -602,5 +607,25 @@ class QnAPlugin extends Gdn_Plugin {
 
 		$Sender->View = 'discussion';
 		$Sender->Discussion($CategoryID);
-	 }
+	}
+
+	public function PostController_QnaEditDiscussion_Create($Sender, $Args) {
+		$DiscussionID = array_shift($Args);
+		$DraftID = array_shift($DraftID);
+
+		$this->LoadUserPostingPermissions($Sender, $CategoryID);
+
+		$DiscussionModel = new DiscussionModel();
+		// Set the model on the form
+		$Sender->Form->SetModel($DiscussionModel);
+		if($Sender->Form->AuthenticatedPostBack() === false) {
+			// Just render page
+		}
+		else {
+			$this->_ValidateDiscussionType($Sender->Form);
+		}
+
+		$Sender->View = 'discussion';
+		$Sender->EditDiscussion($DiscussionID, $DraftID);
+	}
 }
