@@ -55,7 +55,7 @@ class Pocket {
 
    /** $var bool Whether to disable the pocket for embedded comments. * */
    public $EmbeddedNever = FALSE;
-   
+
    public $ShowInDashboard = FALSE;
 
    public function __construct($Location = '') {
@@ -68,10 +68,6 @@ class Pocket {
     *  @return bool
     */
    public function CanRender($Data) {
-      if (!$this->ShowInDashboard && InSection('Dashboard')) {
-         return FALSE;
-      }
-      
       $IsMobile = IsMobile();
       if (($this->MobileOnly && !$IsMobile) || ($this->MobileNever && $IsMobile)) {
          return FALSE;
@@ -133,14 +129,14 @@ class Pocket {
     *  @param array $Data
     */
    public function Load($Data) {
-      $this->Body = $Data['Body'];
-      $this->Disabled = $Data['Disabled'];
-      $this->Format = $Data['Format'];
-      $this->Location = $Data['Location'];
-      $this->Name = $Data['Name'];
-      $this->Page = $Data['Page'];
-      $this->MobileOnly = $Data['MobileOnly'];
-      $this->MobileNever = $Data['MobileNever'];
+      $this->Body = GetValue('Body', $Data);
+      $this->Disabled = GetValue('Disabled', $Data);
+      $this->Format = GetValue('Format', $Data);
+      $this->Location = GetValue('Location', $Data);
+      $this->Name = GetValue('Name', $Data);
+      $this->Page = GetValue('Page', $Data);
+      $this->MobileOnly = GetValue('MobileOnly', $Data);
+      $this->MobileNever = GetValue('MobileNever', $Data);
       $this->EmbeddedNever = GetValue('EmbeddedNever', $Data);
       $this->ShowInDashboard = GetValue('ShowInDashboard', $Data);
 

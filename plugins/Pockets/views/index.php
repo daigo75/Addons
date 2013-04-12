@@ -33,8 +33,8 @@ echo Wrap($this->Data('Title'), 'h1');
    <tbody>
       <?php
       foreach ($this->Data('PocketData') as $PocketRow) {
-      	 $MobileOnly = $PocketRow['MobileOnly'];
-      	 $MobileNever = $PocketRow['MobileNever'];
+      	 $MobileOnly = GetValue('MobileOnly', $PocketRow);
+      	 $MobileNever = GetValue('MobileNever', $PocketRow);
          echo '<tr'.($PocketRow['Disabled'] != Pocket::DISABLED ? '' : ' class="Disabled"').'>';
 
          echo '<td>',
@@ -47,7 +47,7 @@ echo Wrap($this->Data('Title'), 'h1');
             '</td>';
 
          echo '<td>',htmlspecialchars($PocketRow['Page']), '</td>';
-         echo '<td  class="Alt">', htmlspecialchars($PocketRow['Location']); 
+         echo '<td  class="Alt">', htmlspecialchars($PocketRow['Location']);
          if ($MobileOnly) {
          	echo '<br>(', T('Shown only on mobile'), ')';
          }

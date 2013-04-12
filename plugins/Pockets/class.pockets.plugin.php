@@ -38,8 +38,10 @@ class PocketsPlugin extends Gdn_Plugin {
       'Panel' => array('Name' => 'Panel'),
       'BetweenDiscussions' => array('Name' => 'Between Discussions', 'Wrap' => array('<li>', '</li>')),
       'BetweenComments' => array('Name' => 'Between Comments', 'Wrap' => array('<li>', '</li>')),
+      'AfterComments' => array('Name' => 'After Comments', 'Wrap' => array('<li>', '</li>')),
       'Head' => array('Name' => 'Head'),
-      'Foot' => array('Name' => 'Foot'));
+      'Foot' => array('Name' => 'Foot')
+		);
 
    /** An array of all of the pockets indexed by location.
     *
@@ -102,6 +104,11 @@ class PocketsPlugin extends Gdn_Plugin {
       }
 
       $this->ProcessPockets($Sender, 'BetweenComments');
+      //echo '<li>'.$this->TestHtml("BetweenComments").'</li>';
+   }
+
+	 public function Base_AfterComment_Handler($Sender) {
+      $this->ProcessPockets($Sender, 'AfterComments');
       //echo '<li>'.$this->TestHtml("BetweenComments").'</li>';
    }
 
@@ -255,7 +262,7 @@ class PocketsPlugin extends Gdn_Plugin {
       $Sender->SetData('Locations', $this->Locations);
       $Sender->SetData('LocationsArray', $this->GetLocationsArray());
       $Sender->SetData('Pages', array('' => '('.T('All').')', 'activity' => 'activity', 'comments' => 'comments', 'dashboard' => 'dashboard', 'discussions' => 'discussions', 'inbox' => 'inbox', 'profile' => 'profile'));
-      
+
       return $Sender->Render('AddEdit', '', 'plugins/Pockets');
    }
 
@@ -267,7 +274,7 @@ class PocketsPlugin extends Gdn_Plugin {
 
    protected function _Delete($Sender, $PocketID) {
       $Sender->SetData('Title', sprintf(T('Delete %s'), T('Pocket')));
-      
+
       $Form = new Gdn_Form();
 
       if ($Form->AuthenticatedPostBack()) {
@@ -336,7 +343,7 @@ class PocketsPlugin extends Gdn_Plugin {
       
       // Since plugins can't currently maintain their state we have to stash it in the Gdn object.
       $this->_LoadState();
-      
+
       // Build up the data for filtering.
       $Data = array();
       $Data['Request'] = Gdn::Request();
@@ -390,7 +397,7 @@ class PocketsPlugin extends Gdn_Plugin {
    public static function PocketString($Name) {
       $Inst = Gdn::PluginManager()->GetPluginInstance('PocketsPlugin', Gdn_PluginManager::ACCESS_CLASSNAME);
       $Pockets = $Inst->GetPockets($Name);
-      
+
       $Result = '';
       foreach ($Pockets as $Pocket) {
          $Result .= $Pocket->ToString();
