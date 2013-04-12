@@ -114,6 +114,26 @@ class QnAPlugin extends Gdn_Plugin {
 
 
 	/// EVENTS ///
+	/**
+	  * Implemented for procedo.ie.
+	  * Adds a link to the User Menu that points to the page containing User's
+	  * Answered questions. Link is not displayed if there are no answered
+	  * questions.
+	  *
+	  * @param ModuleMenu Sender The menu where the link has to be added. Its
+	  * HtmlID must be "UserMenu".
+	  */
+	 public function MenuModule_BeforeToString_Handler($Sender) {
+		if($Sender->HtmlId == 'UserMenu') {
+			if($this->UserAnsweredQuestions(Gdn::Session()->UserID) > 0) {
+				$Sender->AddLink('QnA',
+													T('My Questions'),
+													'/discussions/mine?qna=Answered',
+													array('Garden.SignIn.Allow'),
+													array('class' => 'UserNotifications'));
+			}
+		}
+	 }
 
 	public function Base_BeforeCommentDisplay_Handler($Sender, $Args) {
 		$QnA = GetValueR('Comment.QnA', $Args);
@@ -429,22 +449,48 @@ class QnAPlugin extends Gdn_Plugin {
 		}
 	}
 
-	/**
-	 * @param Gdn_Controller $Sender
-	 * @param array $Args
-	 */
-	public function NotificationsController_BeforeInformNotifications_Handler($Sender, $Args) {
-		$Path = trim($Sender->Request->GetValue('Path'), '/');
-		if (preg_match('`^(vanilla/)?discussion[^s]`i', $Path))
-			return;
+	 /**
+	  * Returns a count of User's Questions that received answers.
+	  *
+	  * @return int The amount of User's Questions that received answers.
+	  */
+	 private function UserAnsweredQuestions($UserID, array $ExtraWheres = array()) {
+		// TODO Make the "1 week" parameter configurable
+		// Search only Questions that have Answers and that are at least one week old
+		$ReferenceDate = date('Ymd', strtotime('-1 week'));
+		$DefaultWheres = array(
+			'DateInserted <=' => $ReferenceDate,
+			'Type' => 'Question',
+			'InsertUserID' => $UserID,
+			'QnA' => 'Answered',
+		);
+
+		// Merge the extra WHERE clauses to the default ones
+		$Wheres = array_merge($ExtraWheres,
+													$DefaultWheres);
 
 		// Check to see if the user has answered questions.
-		$Count = Gdn::SQL()->GetCount('Discussion', array('Type' => 'Question', 'InsertUserID' => Gdn::Session()->UserID, 'QnA' => 'Answered'));
-		if ($Count > 0) {
-			$Sender->InformMessage(FormatString(T("You've asked questions that have now been answered", "<a href=\"{/discussions/mine?qna=Answered,url}\">You've asked questions that now have answers</a>. Make sure you accept/reject the answers.")), 'Dismissable');
-		}
-	}
+		return Gdn::SQL()
+			->GetCount('Discussion',
+								 $Wheres);
+	 }
 
+   /**
+    * @param Gdn_Controller $Sender
+    * @param array $Args
+    */
+   public function NotificationsController_BeforeInformNotifications_Handler($Sender, $Args) {
+      $Path = trim($Sender->Request->GetValue('Path'), '/');
+      if (preg_match('`^(vanilla/)?discussion[^s]`i', $Path)) {
+         return;
+      }
+
+			$Count = $this->UserAnsweredQuestions(Gdn::Session()->UserID);
+      if ($Count > 0) {
+         $Sender->InformMessage(FormatString(T("You've asked questions that have now been answered", "<a href=\"{/discussions/mine?qna=Answered,url}\">You've asked questions that now have answers</a>. Make sure you accept/reject the answers.")), 'Dismissable');
+      }
+   }
+	 
 	/**
 	 * @param Gdn_Controller $Sender
 	 * @param array $Args
