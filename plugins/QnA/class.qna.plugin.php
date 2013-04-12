@@ -8,7 +8,7 @@
 $PluginInfo['QnA'] = array(
 	'Name' => 'Q&A',
 	'Description' => 'Users may designate a discussion as a Question and then officially accept one or more of the comments as the answer.',
-	'Version' => '13.03.14',
+	'Version' => '13.04.12',
 	'RequiredApplications' => array('Vanilla' => '2.0.18'),
 	'MobileFriendly' => TRUE,
 	'Author' => 'Todd Burry',
@@ -490,7 +490,7 @@ class QnAPlugin extends Gdn_Plugin {
          $Sender->InformMessage(FormatString(T("You've asked questions that have now been answered", "<a href=\"{/discussions/mine?qna=Answered,url}\">You've asked questions that now have answers</a>. Make sure you accept/reject the answers.")), 'Dismissable');
       }
    }
-	 
+
 	/**
 	 * @param Gdn_Controller $Sender
 	 * @param array $Args
