@@ -7,7 +7,7 @@ function Gdn_Quotes() {
    Gdn_Quotes.prototype.Prepare = function() {
    
       // Attach quote event to each Quote button, and return false to prevent link follow
-      $('a.ReactButton.Quote').livequery('click', jQuery.proxy(function(event){
+      $('span.CommentQuote a').livequery('click', jQuery.proxy(function(event){
          var QuoteLink = $(event.target);
          var ObjectID = QuoteLink.attr('href').split('/').pop();
          this.Quote(ObjectID, QuoteLink);
@@ -31,55 +31,6 @@ function Gdn_Quotes() {
       // Determine what mode we're in (default, cleditor... ?)
       $('div.cleditorMain').livequery(function(){
          Quotes.SetInsertMode('cleditor', this);
-      });
-      
-      var QuoteFoldingLevel = gdn.definition('QuotesFolding', 1);
-      
-      if (QuoteFoldingLevel != 'None') {
-         QuoteFoldingLevel = parseInt(QuoteFoldingLevel) + 1;
-         var MaxFoldingLevel = 6;
-         $('.Comment .Message').livequery(function(){
-
-            
-            // Find the closest child quote
-            var PetQuote = $(this).children('.UserQuote');
-            if (!PetQuote.length) return;
-
-            Quotes.ExploreFold(PetQuote, 1, MaxFoldingLevel, QuoteFoldingLevel);
-            
-         });
-
-         $('a.QuoteFolding').livequery('click', function(){
-            var QuoteTarget = $(this).closest('.QuoteText').children('.UserQuote');
-            QuoteTarget = $(QuoteTarget);
-            QuoteTarget.toggle();
-
-            if (QuoteTarget.css('display') != 'none')
-               $(this).html('&laquo; hide previous quotes');
-            else
-               $(this).html('&raquo; show previous quotes');
-
-            return false;
-         });
-      }
-   }
-   
-   Gdn_Quotes.prototype.ExploreFold = function(QuoteTree, FoldingLevel, MaxLevel, TargetLevel) {
-      if (FoldingLevel > MaxLevel || FoldingLevel > TargetLevel) return;
-      var Quotes = this;
-      $(QuoteTree).each(function(i, el){
-         var ExamineQuote = $(el);
-         
-         if (FoldingLevel == TargetLevel) {
-            $(ExamineQuote).addClass('QuoteFolded').hide();
-            $(ExamineQuote).before('<div><a href="" class="QuoteFolding">&raquo; show previous quotes</a></div>');
-            return;
-         }
-         
-         var FoldQuote = $(ExamineQuote).children('.QuoteText').children('.UserQuote');
-         if (!FoldQuote.length) return;
-
-         Quotes.ExploreFold(FoldQuote, FoldingLevel + 1, MaxLevel, TargetLevel);
       });
    }
    
@@ -145,16 +96,16 @@ function Gdn_Quotes() {
                }               
             }
 */
-//				var webRoot = gdn.definition('WebRoot', '');
-//            var ss = document.createElement("link");
-//            ss.type = "text/css";
-//            ss.rel = "stylesheet";
-//            ss.href = gdn.combinePaths(webRoot, '/plugins/Quotes/css/cleditor.css');
-//            
-//            if (document.all)
-//            	FrameDocument.createStyleSheet(ss.href);
-//            else
-//            	FrameDocument.getElementsByTagName("head")[0].appendChild(ss);
+				var webRoot = gdn.definition('WebRoot', '');
+            var ss = document.createElement("link");
+            ss.type = "text/css";
+            ss.rel = "stylesheet";
+            ss.href = gdn.combinePaths(webRoot, '/plugins/Quotes/css/cleditor.css');
+            
+            if (document.all)
+            	FrameDocument.createStyleSheet(ss.href);
+            else
+            	FrameDocument.getElementsByTagName("head")[0].appendChild(ss);
 
          break;
          
@@ -228,12 +179,10 @@ function Gdn_Quotes() {
       if (!QuotedElement) return false;
       
       this.AddSpinner();
-      var QuotebackURL = gdn.url('/discussion/getquote/'+ObjectID);
+      var QuotebackURL = gdn.url('plugin/quotes/getquote/'+ObjectID);
       jQuery.ajax({
          url: QuotebackURL,
-         data: { format: $('#Form_Format').val() },
          type: 'GET',
-         dataType: 'json',
          success: jQuery.proxy(this.QuoteResponse,this)
       });
       return true;
@@ -248,23 +197,39 @@ function Gdn_Quotes() {
    }
    
    Gdn_Quotes.prototype.QuoteResponse = function(Data, Status, XHR) {
-      gdn.inform(Data);
-      
+      Data = jQuery.parseJSON(Data);
       if (Data && Data.Quote.selector) {
          var ObjectID = Data.Quote.selector;
          this.RemoveSpinner();
-      } else {return;}
+      } else { return; }
       
-      this.ApplyQuoteText(Data.Quote.body);
+      switch (Data.Quote.format) {
+         case 'Html':   // HTML
+            var Append = '<blockquote rel="'+Data.Quote.authorname+'">'+Data.Quote.body+'</blockquote>'+"\n";
+            break;
+            
+         case 'BBCode':
+            var Append = '[quote="'+Data.Quote.authorname+'"]'+Data.Quote.body+'[/quote]'+"\n";
+            break;
+         
+         case 'Display':
+         case 'Text':   // Plain
+            var Append = ' > '+Data.Quote.authorname+" said:\n";
+            Append = Append+' > '+Data.Quote.body+"\n";
+            break;
+            
+         default:
+            var Append = '';
+            return;
+      
+      }
+      
+      this.ApplyQuoteText(Append);
    }
    
    Gdn_Quotes.prototype.ApplyQuoteText = function(QuoteText) {
-      var Editor = this.GetEditor();
-      
-      // First try and throw an event.
-      var r = jQuery(Editor).trigger('appendHtml', QuoteText + "<br />");
-      
       QuoteText = QuoteText+"\n";
+      var Editor = this.GetEditor();
       Editor.val(Editor.val() + QuoteText);
       
       switch (this.InsertMode) {
