@@ -18,7 +18,7 @@
 		 <div class="Tabs">
 				<ul>
 					<?php
-						if($this->UserCanPostFreely || $this->UserCanPostQuestion) {
+						if(GetValue('UserCanPostFreely', $this) || GetValue('UserCanPostQuestion', $this)) {
 							$CssClass = $Form->GetValue('Type') == 'Question' ? 'Active' : '';
 							$QuestionLink = Anchor(T('Ask a Question'),
 																		 '#',
@@ -34,7 +34,7 @@
 											 );
 						}
 
-						if($this->UserCanPostFreely || $this->UserCanPostDiscussion) {
+						if(GetValue('UserCanPostFreely', $this) || GetValue('UserCanPostDiscussion', $this)) {
 							$CssClass = $Form->GetValue('Type') == 'Discussion' ? 'Active' : '';
 							$QuestionLink = Anchor(T('Start a New Discussion'),
 																		 '#',
