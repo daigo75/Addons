@@ -183,8 +183,8 @@ class QnAPlugin extends Gdn_Plugin {
 		// Write the links.
 		$Query = http_build_query(array('commentid' => $CommentID, 'tkey' => Gdn::Session()->TransientKey()));
 
-		echo ' <span class="MItem">'.Anchor(T('Accept', 'Accept'), '/discussion/qna/accept?'.$Query, array('class' => 'QnA-Yes', 'title' => T('Accept this answer.'))).'</span> '.
-			' <span class="MItem">'.Anchor(T('Reject', 'Reject'), '/discussion/qna/reject?'.$Query, array('class' => 'QnA-No', 'title' => T('Reject this answer.'))).'</span> ';
+		echo ' <span class="MItem">'.Anchor(T('Accept', 'Accept'), '/discussion/qna/accept?'.$Query, array('class' => 'QnA-Yes LargeButton', 'title' => T('Accept this answer.'))).'</span> '.
+			' <span class="MItem">'.Anchor(T('Reject', 'Reject'), '/discussion/qna/reject?'.$Query, array('class' => 'QnA-No LargeButton', 'title' => T('Reject this answer.'))).'</span> ';
 
 		static $InformMessage = TRUE;
 
