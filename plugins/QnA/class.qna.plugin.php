@@ -8,7 +8,7 @@
 $PluginInfo['QnA'] = array(
 	'Name' => 'Q&A',
 	'Description' => 'Users may designate a discussion as a Question and then officially accept one or more of the comments as the answer.',
-	'Version' => '13.04.12',
+	'Version' => '13.12.12',
 	'RequiredApplications' => array('Vanilla' => '2.0.18'),
 	'MobileFriendly' => TRUE,
 	'Author' => 'Todd Burry',
@@ -52,6 +52,12 @@ class QnAPlugin extends Gdn_Plugin {
 		Gdn::Router()->SetRoute('^./*?post/editdiscussion(/.*)?$',
 														'post/qnaeditdiscussion$1',
 														'Internal');
+		// Create Route to redirect calls to index and default method to /qnadiscussion
+		Gdn::Router()->SetRoute('^post(/index)?(/)?$',
+														'post/qnadiscussion$1',
+														'Internal');
+
+		// TODO Find a way to handle the condition in which /post/"whatever" is called. Such call redirects to the index, but it's not intercepted by the routes and bring the user to a broken page, since posting permissions are not checked
 	}
 
 	/**
