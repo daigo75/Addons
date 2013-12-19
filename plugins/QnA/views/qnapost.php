@@ -1,7 +1,6 @@
 <?php if (!defined('APPLICATION')) exit();
 
 //var_dump($this->UserCanPostDiscussion, $this->UserCanPostQuestion);
-
 ?>
 <div class="QnA-Post">
 	<div class="P YesScript">

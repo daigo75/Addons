@@ -382,6 +382,7 @@ class QnAPlugin extends Gdn_Plugin {
 	}
 
 	/**
+	 * Event handler invoked before any "Discussion" page is rendered.
 	 *
 	 * @param DiscussionsController $Sender
 	 * @param type $Args
@@ -520,6 +521,8 @@ class QnAPlugin extends Gdn_Plugin {
 	}
 
 	public function PostController_Render_Before($Sender, $Args) {
+		$this->LoadUserPostingPermissions($Sender, $CategoryID);
+
 		$Form = $Sender->Form; //new Gdn_Form();
 		$QuestionButton = !C('Plugins.QnA.UseBigButtons') || GetValue('Type', $_GET) == 'Question';
 		if (!$Form->IsPostBack()) {
@@ -577,10 +580,15 @@ class QnAPlugin extends Gdn_Plugin {
 	 * False otherwise.
 	 */
 	private function CheckCategoryPermission($PermissionName, $CategoryID) {
-		return Gdn::Session()->CheckPermission($PermissionName,
-																					 false,
-																					 'Category',
-																					 $CategoryID);
+		if($CategoryID > 0) {
+			return Gdn::Session()->CheckPermission($PermissionName,
+																						 false,
+																						 'Category',
+																						 $CategoryID);
+		}
+		else {
+			return Gdn::Session()->CheckPermission($PermissionName, false);
+		}
 	}
 
 	/**
@@ -644,8 +652,6 @@ class QnAPlugin extends Gdn_Plugin {
 		// Add CategoryID as a Sender property to make it available during rendering
 		$this->CategoryID = $CategoryID;
 
-		$this->LoadUserPostingPermissions($Sender, $CategoryID);
-
 		$DiscussionModel = new DiscussionModel();
 
 		// Set the model on the form
@@ -664,8 +670,6 @@ class QnAPlugin extends Gdn_Plugin {
 	public function PostController_QnaEditDiscussion_Create($Sender, $Args) {
 		$DiscussionID = array_shift($Args);
 		$DraftID = array_shift($DraftID);
-
-		$this->LoadUserPostingPermissions($Sender, $CategoryID);
 
 		$DiscussionModel = new DiscussionModel();
 		// Set the model on the form
