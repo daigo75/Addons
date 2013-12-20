@@ -1,5 +1,8 @@
 QnA plugin for Vanilla Forums - Change log
 
+####13.12.20
+* Corrected permission checking during posting of new discussions/questions.
+
 ####13.12.19
 * Corrected permission checking on posting page.
 

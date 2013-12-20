@@ -8,16 +8,17 @@
 $PluginInfo['QnA'] = array(
 	'Name' => 'Q&A',
 	'Description' => 'Users may designate a discussion as a Question and then officially accept one or more of the comments as the answer.',
-	'Version' => '13.12.12',
+	'Version' => '13.12.20',
 	'RequiredApplications' => array('Vanilla' => '2.0.18'),
 	'MobileFriendly' => TRUE,
 	'Author' => 'Todd Burry',
 	'AuthorEmail' => 'todd@vanillaforums.com',
 	'AuthorUrl' => 'http://www.vanillaforums.org/profile/todd',
-	'RegisterPermissions' => array('Plugins.QnA.CanPostQuestion',
-																 'Plugins.QnA.CanPostDiscussion',
-																 'Plugins.QnA.CanPostFreely',
-																 ),
+	'RegisterPermissions' => array(
+		'Plugins.QnA.CanPostQuestion',
+		'Plugins.QnA.CanPostDiscussion',
+		'Plugins.QnA.CanPostFreely',
+	),
 );
 
 /**
@@ -625,10 +626,13 @@ class QnAPlugin extends Gdn_Plugin {
 		$Sender->AddDefinition('QnA_UserCanPostQuestion', (int)$this->UserCanPostQuestion);
 	}
 
-	private function _ValidateDiscussionType(Gdn_Form $Form) {
-		$PostType = $Form->GetFormValue('Type');
+	private function _ValidateDiscussionType($Sender) {
+		$PostType = $Sender->Form->GetFormValue('Type');
+		$CategoryID = $Sender->Form->GetFormValue('CategoryID');
 
-			// Check if User can post a Question
+		$this->LoadUserPostingPermissions($Sender, $CategoryID);
+
+		// Check if User can post a Question
 		if(($PostType == 'Question') &&
 			 !($this->UserCanPostQuestion || $this->UserCanPostFreely)) {
 			$Form->AddError(T('You are not allowed to post a Question in this Category.'));
@@ -660,7 +664,7 @@ class QnAPlugin extends Gdn_Plugin {
 			// Just render page
 		}
 		else {
-			$this->_ValidateDiscussionType($Sender->Form);
+			$this->_ValidateDiscussionType($Sender);
 		}
 
 		$Sender->View = 'discussion';
@@ -678,7 +682,7 @@ class QnAPlugin extends Gdn_Plugin {
 			// Just render page
 		}
 		else {
-			$this->_ValidateDiscussionType($Sender->Form);
+			$this->_ValidateDiscussionType($Sender);
 		}
 
 		$Sender->View = 'discussion';
