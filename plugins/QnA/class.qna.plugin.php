@@ -633,22 +633,22 @@ class QnAPlugin extends Gdn_Plugin {
    * @param Gdn_Controller Sender Sending Controller instance.
    */
 	private function _ValidateDiscussionType($Sender) {
-		$PostType = $Sender->Form->GetFormValue('Type');
-		$CategoryID = $Sender->Form->GetFormValue('CategoryID');
-
-		$this->LoadUserPostingPermissions($Sender, $CategoryID);
-
-		// Check if User can post a Question
-		if(($PostType == 'Question') &&
-			 !($this->UserCanPostQuestion || $this->UserCanPostFreely)) {
-			$Sender->Form->AddError(T('You are not allowed to post a Question in this Category.'));
-		}
-		else {
-			// Check if User can post a Discussion
-			if(!($this->UserCanPostDiscussion || $this->UserCanPostFreely)) {
-				$Sender->Form->AddError(T('You are not allowed to post a Discussion in this Category.'));
-			}
-		}
+		//$PostType = $Sender->Form->GetFormValue('Type');
+		//$CategoryID = $Sender->Form->GetFormValue('CategoryID');
+		//
+		//$this->LoadUserPostingPermissions($Sender, $CategoryID);
+		//
+		//// Check if User can post a Question
+		//if(($PostType == 'Question') &&
+		//	 !($this->UserCanPostQuestion || $this->UserCanPostFreely)) {
+		//	$Sender->Form->AddError(T('You are not allowed to post a Question in this Category.'));
+		//}
+		//else {
+		//	// Check if User can post a Discussion
+		//	if(!($this->UserCanPostDiscussion || $this->UserCanPostFreely)) {
+		//		$Sender->Form->AddError(T('You are not allowed to post a Discussion in this Category.'));
+		//	}
+		//}
 	}
 
   /**
