@@ -626,6 +626,12 @@ class QnAPlugin extends Gdn_Plugin {
 		$Sender->AddDefinition('QnA_UserCanPostQuestion', (int)$this->UserCanPostQuestion);
 	}
 
+	/**
+	 * Validates the discussion type to see if it's allowed to be posted in a
+	 * specific category.
+	 *
+   * @param Gdn_Controller Sender Sending Controller instance.
+   */
 	private function _ValidateDiscussionType($Sender) {
 		$PostType = $Sender->Form->GetFormValue('Type');
 		$CategoryID = $Sender->Form->GetFormValue('CategoryID');
@@ -635,12 +641,12 @@ class QnAPlugin extends Gdn_Plugin {
 		// Check if User can post a Question
 		if(($PostType == 'Question') &&
 			 !($this->UserCanPostQuestion || $this->UserCanPostFreely)) {
-			$Form->AddError(T('You are not allowed to post a Question in this Category.'));
+			$Sender->Form->AddError(T('You are not allowed to post a Question in this Category.'));
 		}
 		else {
 			// Check if User can post a Discussion
 			if(!($this->UserCanPostDiscussion || $this->UserCanPostFreely)) {
-				$Form->AddError(T('You are not allowed to post a Discussion in this Category.'));
+				$Sender->Form->AddError(T('You are not allowed to post a Discussion in this Category.'));
 			}
 		}
 	}

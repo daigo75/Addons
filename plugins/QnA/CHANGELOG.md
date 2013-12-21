@@ -1,5 +1,8 @@
 QnA plugin for Vanilla Forums - Change log
 
+####13.12.21
+* Ref. ticket #15. Fixed minor bug in QnAPlugin::_ValidateDiscussionType().
+
 ####13.12.20
 * Corrected permission checking during posting of new discussions/questions.
 
