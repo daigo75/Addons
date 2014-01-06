@@ -423,11 +423,18 @@ class QnAPlugin extends Gdn_Plugin {
 		$Sender->Render('Value', 'Utility', 'Dashboard');
 	}
 
-	public function Base_BeforeDiscussionMeta_Handler($Sender, $Args) {
+	/**
+	 * Renders the discussion status (Question, Answered, Discussion) next to
+	 * the discussion title.
+	 *
+	 * @param Gdn_Controller Sender
+	 * @param array Args The arguments passed with the event.
+	 */
+	protected function RenderDiscussionStatus($Sender, $Args) {
 		$Discussion = $Args['Discussion'];
-
-		if (strtolower(GetValue('Type', $Discussion)) != 'question')
+		if (strtolower(GetValue('Type', $Discussion)) != 'question') {
 			return;
+		}
 
 		$QnA = GetValue('QnA', $Discussion);
 		$Title = '';
@@ -455,6 +462,10 @@ class QnAPlugin extends Gdn_Plugin {
 		if ($QnA) {
 			echo ' <span class="Tag QnA-Tag-'.$QnA.'"'.$Title.'>'.T("Q&A $QnA", $Text).'</span> ';
 		}
+	}
+
+	public function Base_AfterDiscussionTitle_Handler($Sender, $Args) {
+		$this->RenderDiscussionStatus($Sender, $Args);
 	}
 
 	 /**
