@@ -529,7 +529,7 @@ class QnAPlugin extends Gdn_Plugin {
 		}
 
 		if (!C('Plugins.QnA.UseBigButtons'))
-			include $Sender->FetchViewLocation('QnAPost', 'post', 'plugins');
+			include $Sender->FetchViewLocation('QnAPost', 'post', 'plugins/QnA');
 	}
 
 	public function PostController_Render_Before($Sender, $Args) {
