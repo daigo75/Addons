@@ -1,5 +1,8 @@
 QnA plugin for Vanilla Forums - Change log
 
+####14.01.08
+* Refactored loading of custom view to allow theme to override it.
+
 ####13.12.21
 * Ref. ticket #15. Fixed minor bug in QnAPlugin::_ValidateDiscussionType().
 * Ref. ticket #15. Temporarily disabled discussion type validation.

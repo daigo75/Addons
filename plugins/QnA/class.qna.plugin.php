@@ -8,7 +8,7 @@
 $PluginInfo['QnA'] = array(
 	'Name' => 'Q&A',
 	'Description' => 'Users may designate a discussion as a Question and then officially accept one or more of the comments as the answer.',
-	'Version' => '13.12.20',
+	'Version' => '14.01.08',
 	'RequiredApplications' => array('Vanilla' => '2.0.18'),
 	'MobileFriendly' => TRUE,
 	'Author' => 'Todd Burry',
@@ -529,7 +529,7 @@ class QnAPlugin extends Gdn_Plugin {
 		}
 
 		if (!C('Plugins.QnA.UseBigButtons'))
-			include $Sender->FetchViewLocation('QnAPost', '', 'plugins/QnA');
+			include $Sender->FetchViewLocation('QnAPost', 'post', 'plugins');
 	}
 
 	public function PostController_Render_Before($Sender, $Args) {
