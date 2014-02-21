@@ -1,5 +1,10 @@
 QnA plugin for Vanilla Forums - Change log
 
+####14.02.21.001
+* Added preference fields:
+	* Notify me when someone posts an answer to my question.
+	* Notify me when my answers are accepted.
+
 ####14.01.08
 * Refactored loading of custom view to allow theme to override it.
 

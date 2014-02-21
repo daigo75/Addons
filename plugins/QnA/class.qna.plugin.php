@@ -8,12 +8,12 @@
 $PluginInfo['QnA'] = array(
 	'Name' => 'Q&A',
 	'Description' => 'Users may designate a discussion as a Question and then officially accept one or more of the comments as the answer.',
-	'Version' => '14.01.08',
+	'Version' => '14.02.21.001',
 	'RequiredApplications' => array('Vanilla' => '2.0.18'),
 	'MobileFriendly' => TRUE,
-	'Author' => 'Todd Burry',
+	'Author' => 'Diego Zanella (originally Todd Burry)',
 	'AuthorEmail' => 'todd@vanillaforums.com',
-	'AuthorUrl' => 'http://www.vanillaforums.org/profile/todd',
+	'AuthorUrl' => 'http://thankfrank.com',
 	'RegisterPermissions' => array(
 		'Plugins.QnA.CanPostQuestion',
 		'Plugins.QnA.CanPostDiscussion',
@@ -29,6 +29,8 @@ $PluginInfo['QnA'] = array(
  */
 class QnAPlugin extends Gdn_Plugin {
 	const DEFAULT_PERMISSION_CATEGORY_ID = -1;
+	const ACTIVITY_ANSWER_POSTED = 'QuestionAnswer';
+	const ACTIVITY_ANSWER_ACCEPTED = 'AnswerAccepted';
 
 	public function __construct() {
 		parent::__construct();
@@ -94,11 +96,11 @@ class QnAPlugin extends Gdn_Plugin {
 		Gdn::SQL()->Replace(
 			'ActivityType',
 			array('AllowComments' => '0', 'RouteCode' => 'question', 'Notify' => '1', 'Public' => '0', 'ProfileHeadline' => '', 'FullHeadline' => ''),
-			array('Name' => 'QuestionAnswer'), TRUE);
+			array('Name' => self::ACTIVITY_ANSWER_POSTED), TRUE);
 		Gdn::SQL()->Replace(
 			'ActivityType',
 			array('AllowComments' => '0', 'RouteCode' => 'answer', 'Notify' => '1', 'Public' => '0', 'ProfileHeadline' => '', 'FullHeadline' => ''),
-			array('Name' => 'AnswerAccepted'), TRUE);
+			array('Name' => self::ACTIVITY_ANSWER_ACCEPTED), TRUE);
 
 		if ($QnAExists && !$DateAcceptedExists) {
 			// Default the date accepted to the accepted answer's date.
@@ -227,7 +229,7 @@ class QnAPlugin extends Gdn_Plugin {
 
 		$ActivityID = $ActivityModel->Add(
 			$Comment['InsertUserID'],
-			'QuestionAnswer',
+			self::ACTIVITY_ANSWER_POSTED,
 			Anchor(Gdn_Format::Text($Discussion['Name']), "discussion/comment/$CommentID/#Comment_$CommentID"),
 			$Discussion['InsertUserID'],
 			'',
@@ -304,7 +306,7 @@ class QnAPlugin extends Gdn_Plugin {
 			if ($QnA == 'Accepted') {
 				AddActivity(
 					Gdn::Session()->UserID,
-					'AnswerAccepted',
+					self::ACTIVITY_ANSWER_ACCEPTED,
 					Anchor(Gdn_Format::Text($Discussion['Name']), "/discussion/{$Discussion['DiscussionID']}/".Gdn_Format::Url($Discussion['Name'])),
 					$Comment['InsertUserID'],
 					"/discussion/comment/{$Comment['CommentID']}/#Comment_{$Comment['CommentID']}",
@@ -325,6 +327,22 @@ class QnAPlugin extends Gdn_Plugin {
 		} elseif ($QnA = Gdn::Request()->Get('qna')) {
 			$Args['Wheres']['QnA'] = $QnA;
 		}
+	}
+
+	/**
+	 * ProfileController_AfterPreferencesDefined Event Handler.
+	 * Adds notification options to User's Preferences screen.
+	 *
+	 * @param Gdn_Controller Sender Sending controller instance.
+	 */
+	public function ProfileController_AfterPreferencesDefined_Handler($Sender) {
+		$NotifyOfAnswerPostedMessage = T('Notify me when somebody answers my questions.');
+		$NotifyOfAnswerAcceptedMessage = T('Notify me when my answers are accepted.');
+
+		$Sender->Preferences['Notifications']['Email.' . self::ACTIVITY_ANSWER_POSTED] = $NotifyOfAnswerPostedMessage;
+		$Sender->Preferences['Notifications']['Popup.' . self::ACTIVITY_ANSWER_POSTED] = $NotifyOfAnswerPostedMessage;
+		$Sender->Preferences['Notifications']['Email.' . self::ACTIVITY_ANSWER_ACCEPTED] = $NotifyOfAnswerAcceptedMessage;
+		$Sender->Preferences['Notifications']['Popup.' . self::ACTIVITY_ANSWER_ACCEPTED] = $NotifyOfAnswerAcceptedMessage;
 	}
 
 	/**
