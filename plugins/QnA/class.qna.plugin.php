@@ -161,39 +161,49 @@ class QnAPlugin extends Gdn_Plugin {
 		$Discussion = GetValue('Discussion', $Args);
 		$Comment = GetValue('Comment', $Args);
 
-		if (!$Comment)
+		if (!$Comment){
 			return;
+		}
 
 		$CommentID = GetValue('CommentID', $Comment);
-		if (!is_numeric($CommentID))
+		if (!is_numeric($CommentID)){
 			return;
+		}
 
 		if (!$Discussion) {
 			static $DiscussionModel = NULL;
-			if ($DiscussionModel === NULL)
+			if ($DiscussionModel === NULL){
 				$DiscussionModel = new DiscussionModel();
+			}
 			$Discussion = $DiscussionModel->GetID(GetValue('DiscussionID', $Comment));
 		}
 
-		if (!$Discussion || strtolower(GetValue('Type', $Discussion)) != 'question')
+		if (!$Discussion || strtolower(GetValue('Type', $Discussion)) != 'question'){
 			return;
+		}
 
 		// Check permissions.
 		$CanAccept = Gdn::Session()->CheckPermission('Garden.Moderation.Manage');
 		$CanAccept |= Gdn::Session()->UserID == GetValue('InsertUserID', $Discussion) && Gdn::Session()->UserID != GetValue('InsertUserID', $Comment);
 
-		if (!$CanAccept)
-			return;
-
-		$QnA = GetValue('QnA', $Comment);
-		if ($QnA)
-			return;
-
 		// Write the links.
 		$Query = http_build_query(array('commentid' => $CommentID, 'tkey' => Gdn::Session()->TransientKey()));
+		$QnA = GetValue('QnA', $Comment);
 
-		echo ' <span class="MItem">'.Anchor(T('Accept', 'Accept'), '/discussion/qna/accept?'.$Query, array('class' => 'QnA-Yes LargeButton', 'title' => T('Accept this answer.'))).'</span> '.
-			' <span class="MItem">'.Anchor(T('Reject', 'Reject'), '/discussion/qna/reject?'.$Query, array('class' => 'QnA-No LargeButton', 'title' => T('Reject this answer.'))).'</span> ';
+		if( !$QnA AND $CanAccept){
+			//Only show the clickable 'best answer' icon if this answer is not marked with accepted and if the user can click on it
+			echo ' <span class="MItem">'.Anchor(T('Accept', 'Accept'), '/discussion/qna/accept?'.$Query, array('class' => 'QnA-Yes LargeButton', 'title' => T('Accept this answer.'))).'</span> ';
+		}	
+
+		if ($QnA && ($QnA == 'Accepted' || Gdn::Session()->CheckPermission('Garden.Moderation.Manage'))) {
+			//this post has been tagged with 'best answer' show a cool non-link icon
+			$Title = T("QnA $QnA Answer", "$QnA Answer");
+			echo '<span class="Tag QnA-Box QnA-'.$QnA.'"></span>';
+		}
+
+		if( Gdn::Session()->CheckPermission('Garden.Moderation.Manage') ){
+			echo ' <span class="MItem">'.Anchor(T('Reject', 'Reject'), '/discussion/qna/reject?'.$Query, array('class' => 'QnA-No LargeButton', 'title' => T('Reject this answer.'))).'</span> ';
+		}
 
 		static $InformMessage = TRUE;
 
@@ -204,16 +214,7 @@ class QnAPlugin extends Gdn_Plugin {
 	}
 
 	public function Base_CommentInfo_Handler($Sender, $Args) {
-		$Type = GetValue('Type', $Args);
-		if ($Type != 'Comment')
-			return;
 
-		$QnA = GetValueR('Comment.QnA', $Args);
-
-		if ($QnA && ($QnA == 'Accepted' || Gdn::Session()->CheckPermission('Garden.Moderation.Manage'))) {
-			$Title = T("QnA $QnA Answer", "$QnA Answer");
-			echo ' <span class="Tag QnA-Box QnA-'.$QnA.'" title="'.htmlspecialchars($Title).'"><span>'.$Title.'</span></span> ';
-		}
 	}
 
 	public function CommentModel_BeforeNotification_Handler($Sender, $Args) {
