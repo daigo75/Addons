@@ -1,5 +1,8 @@
 QnA plugin for Vanilla Forums - Change log
 
+####14.03.04.001
+* New Best Answer visuals upgrades. Two new icons located at bottom of post.
+
 ####14.02.21.001
 * Added preference fields:
 	* Notify me when someone posts an answer to my question.
