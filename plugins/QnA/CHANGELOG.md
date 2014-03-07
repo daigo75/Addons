@@ -2,6 +2,7 @@ QnA plugin for Vanilla Forums - Change log
 
 ####14.03.07.001
 * Removed unneeded localisation string.
+* Moved question status (open, answered, answer accepted) before discussion title.
 
 ####14.03.04.001
 * New Best Answer visuals upgrades. Two new icons located at bottom of post.
