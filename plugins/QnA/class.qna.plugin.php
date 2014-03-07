@@ -483,7 +483,7 @@ class QnAPlugin extends Gdn_Plugin {
 		}
 	}
 
-	public function Base_BeforeDiscussionTitle_Handler($Sender, $Args) {
+	public function Base_BeforeDiscussionMeta_Handler($Sender, $Args) {
 		$this->RenderDiscussionStatus($Sender, $Args);
 	}
 
