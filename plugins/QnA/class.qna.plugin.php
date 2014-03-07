@@ -8,7 +8,7 @@
 $PluginInfo['QnA'] = array(
 	'Name' => 'Q&A',
 	'Description' => 'Users may designate a discussion as a Question and then officially accept one or more of the comments as the answer.',
-	'Version' => '14.02.21.001',
+	'Version' => '14.03.07.001',
 	'RequiredApplications' => array('Vanilla' => '2.0.18'),
 	'MobileFriendly' => TRUE,
 	'Author' => 'Diego Zanella (originally Todd Burry)',
@@ -193,7 +193,7 @@ class QnAPlugin extends Gdn_Plugin {
 		if( !$QnA AND $CanAccept){
 			//Only show the clickable 'best answer' icon if this answer is not marked with accepted and if the user can click on it
 			echo ' <span class="MItem">'.Anchor(T('Accept', 'Accept'), '/discussion/qna/accept?'.$Query, array('class' => 'QnA-Yes LargeButton', 'title' => T('Accept this answer.'))).'</span> ';
-		}	
+		}
 
 		if ($QnA && ($QnA == 'Accepted' || Gdn::Session()->CheckPermission('Garden.Moderation.Manage'))) {
 			//this post has been tagged with 'best answer' show a cool non-link icon
