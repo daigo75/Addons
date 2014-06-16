@@ -1,5 +1,8 @@
 QnA plugin for Vanilla Forums - Change log
 
+####14.06.16.001
+* Modified identifier of translation strings for discussions filters.
+
 ####14.03.07.001
 * Removed unneeded localisation string.
 * Moved question status (open, answered, answer accepted) before post meta.

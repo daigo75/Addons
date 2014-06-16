@@ -8,7 +8,7 @@
 $PluginInfo['QnA'] = array(
 	'Name' => 'Q&A',
 	'Description' => 'Users may designate a discussion as a Question and then officially accept one or more of the comments as the answer.',
-	'Version' => '14.03.07.001',
+	'Version' => '14.06.16.001',
 	'RequiredApplications' => array('Vanilla' => '2.0.18'),
 	'MobileFriendly' => TRUE,
 	'Author' => 'Diego Zanella (originally Todd Burry)',
@@ -369,7 +369,7 @@ class QnAPlugin extends Gdn_Plugin {
 			$Count = ' <span class="Aside"><span class="Count">'.$Count.'</span></span>';
 
 		echo '<li class="QnA-UnansweredQuestions '.($Sender->RequestMethod == 'unanswered' ? ' Active' : '').'">'
-			.Anchor(Sprite('SpUnansweredQuestions').T('Unanswered'), '/discussions/unanswered', 'UnansweredQuestions')
+			.Anchor(Sprite('SpUnansweredQuestions').T('Discussions_FilterTabs_Unanswered', 'Unanswered'), '/discussions/unanswered', 'UnansweredQuestions')
 			.$Count
 		.'</li>';
 	}
@@ -387,7 +387,7 @@ class QnAPlugin extends Gdn_Plugin {
 		else
 			$Count = ' <span class="Count">'.$Count.'</span>';
 
-		echo '<li'.$CssClass.'><a class="TabLink QnA-UnansweredQuestions" href="'.Url('/discussions/unanswered').'">'.T('Unanswered Questions', 'Unanswered').$Count.'</span></a></li>';
+		echo '<li'.$CssClass.'><a class="TabLink QnA-UnansweredQuestions" href="'.Url('/discussions/unanswered').'">'.T('Discussions_FilterTabs_Unanswered', 'Unanswered').$Count.'</span></a></li>';
 	}
 
 	/**
