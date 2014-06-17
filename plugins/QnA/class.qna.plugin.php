@@ -8,7 +8,7 @@
 $PluginInfo['QnA'] = array(
 	'Name' => 'Q&A',
 	'Description' => 'Users may designate a discussion as a Question and then officially accept one or more of the comments as the answer.',
-	'Version' => '14.06.16.001',
+	'Version' => '14.06.17.001',
 	'RequiredApplications' => array('Vanilla' => '2.0.18'),
 	'MobileFriendly' => TRUE,
 	'Author' => 'Diego Zanella (originally Todd Burry)',
@@ -205,12 +205,13 @@ class QnAPlugin extends Gdn_Plugin {
 			echo ' <span class="MItem">'.Anchor(T('Reject', 'Reject'), '/discussion/qna/reject?'.$Query, array('class' => 'QnA-No LargeButton', 'title' => T('Reject this answer.'))).'</span> ';
 		}
 
-		static $InformMessage = TRUE;
-
-		if ($InformMessage && Gdn::Session()->UserID == GetValue('InsertUserID', $Discussion) && in_array(GetValue('QnA', $Discussion), array('', 'Answered'))) {
-			$Sender->InformMessage(T('Click accept or reject beside an answer.'), 'Dismissable');
-			$InformMessage = FALSE;
-		}
+		// 140617 - D.Zanella
+		// Removed notifications as requested by Sean
+		//static $InformMessage = TRUE;
+		//if ($InformMessage && Gdn::Session()->UserID == GetValue('InsertUserID', $Discussion) && in_array(GetValue('QnA', $Discussion), array('', 'Answered'))) {
+		//	$Sender->InformMessage(T('Click accept or reject beside an answer.'), 'Dismissable');
+		//	$InformMessage = FALSE;
+		//}
 	}
 
 	public function Base_CommentInfo_Handler($Sender, $Args) {
@@ -523,10 +524,12 @@ class QnAPlugin extends Gdn_Plugin {
          return;
       }
 
-			$Count = $this->UserAnsweredQuestions(Gdn::Session()->UserID);
-      if ($Count > 0) {
-         $Sender->InformMessage(FormatString(T("You've asked questions that have now been answered", "<a href=\"{/discussions/mine?qna=Answered,url}\">You've asked questions that now have answers</a>. Make sure you accept/reject the answers.")), 'Dismissable');
-      }
+			// 140617 - D.Zanella
+			// Removed notifications as requested by Sean
+			//$Count = $this->UserAnsweredQuestions(Gdn::Session()->UserID);
+      //if ($Count > 0) {
+      //   $Sender->InformMessage(FormatString(T("You've asked questions that have now been answered", "<a href=\"{/discussions/mine?qna=Answered,url}\">You've asked questions that now have answers</a>. Make sure you accept/reject the answers.")), 'Dismissable');
+      //}
    }
 
 	/**

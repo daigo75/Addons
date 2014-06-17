@@ -1,5 +1,8 @@
 QnA plugin for Vanilla Forums - Change log
 
+####14.06.17.001
+* Disabled notifications. Ref. https://app.asana.com/0/8217127514025/13167149966970
+
 ####14.06.16.001
 * Modified identifier of translation strings for discussions filters.
 
