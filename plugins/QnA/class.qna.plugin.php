@@ -8,7 +8,7 @@
 $PluginInfo['QnA'] = array(
 	'Name' => 'Q&A',
 	'Description' => 'Users may designate a discussion as a Question and then officially accept one or more of the comments as the answer.',
-	'Version' => '14.06.17.001',
+	'Version' => '14.07.03.001',
 	'RequiredApplications' => array('Vanilla' => '2.0.18'),
 	'MobileFriendly' => TRUE,
 	'Author' => 'Diego Zanella (originally Todd Burry)',
@@ -196,9 +196,9 @@ class QnAPlugin extends Gdn_Plugin {
 		}
 
 		if ($QnA && ($QnA == 'Accepted' || Gdn::Session()->CheckPermission('Garden.Moderation.Manage'))) {
-			//this post has been tagged with 'best answer' show a cool non-link icon
-			$Title = T("QnA $QnA Answer", "$QnA Answer");
-			echo '<span class="Tag QnA-Box QnA-'.$QnA.'"></span>';
+			//this post has been tagged with 'best answer' show a cool non-link icon and message
+			$Text = T("QnA $QnA Answer", "$QnA Answer");
+			echo '<span class="Tag QnA-Box QnA-'.$QnA.'">' . $Text . '</span>';
 		}
 
 		if( Gdn::Session()->CheckPermission('Garden.Moderation.Manage') ){

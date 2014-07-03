@@ -1,4 +1,8 @@
-QnA plugin for Vanilla Forums - Change log
+#QnA plugin for Vanilla Forums - Change log
+
+####14.07.03.001
+* Changed rendering of "Best Answer" button to simplify styling.
+* Removed unneeded definition.
 
 ####14.06.17.001
 * Disabled notifications. Ref. https://app.asana.com/0/8217127514025/13167149966970
