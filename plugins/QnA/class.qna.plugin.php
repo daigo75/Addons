@@ -8,11 +8,11 @@
 $PluginInfo['QnA'] = array(
 	'Name' => 'Q&A',
 	'Description' => 'Users may designate a discussion as a Question and then officially accept one or more of the comments as the answer.',
-	'Version' => '14.07.03.001',
+	'Version' => '14.07.16.001',
 	'RequiredApplications' => array('Vanilla' => '2.0.18'),
 	'MobileFriendly' => TRUE,
 	'Author' => 'Diego Zanella (originally Todd Burry)',
-	'AuthorEmail' => 'todd@vanillaforums.com',
+	'AuthorEmail' => 'diego@thankfrank.com',
 	'AuthorUrl' => 'http://thankfrank.com',
 	'RegisterPermissions' => array(
 		'Plugins.QnA.CanPostQuestion',
@@ -190,19 +190,34 @@ class QnAPlugin extends Gdn_Plugin {
 		$Query = http_build_query(array('commentid' => $CommentID, 'tkey' => Gdn::Session()->TransientKey()));
 		$QnA = GetValue('QnA', $Comment);
 
-		if( !$QnA AND $CanAccept){
-			//Only show the clickable 'best answer' icon if this answer is not marked with accepted and if the user can click on it
-			echo ' <span class="MItem">'.Anchor(T('Accept', 'Accept'), '/discussion/qna/accept?'.$Query, array('class' => 'QnA-Yes LargeButton', 'title' => T('Accept this answer.'))).'</span> ';
+		//Only show the clickable 'best answer' icon if this answer is not marked with accepted and if the user can click on it
+		if(!$QnA && $CanAccept) {
+			$AcceptElementCssClass = '';
+		}
+		else {
+			$AcceptElementCssClass = 'Hidden';
+		}
+		echo '<span class="MItem ' . $AcceptElementCssClass . '">' .
+				 Anchor(T('Accept', 'Accept'), '/discussion/qna/accept?' . $Query,
+								array(
+									'class' => 'QnA-Yes LargeButton', 'title' => T('Accept this answer.'),
+									'comment-id' => $CommentID,
+								)).
+				 '</span> ';
+
+		if($QnA && ($QnA == 'Accepted' || Gdn::Session()->CheckPermission('Garden.Moderation.Manage'))) {
+			$AcceptedElementCssClass = '';
+		}
+		else {
+			$AcceptedElementCssClass = 'Hidden';
 		}
 
-		if ($QnA && ($QnA == 'Accepted' || Gdn::Session()->CheckPermission('Garden.Moderation.Manage'))) {
-			//this post has been tagged with 'best answer' show a cool non-link icon and message
-			$Text = T("QnA $QnA Answer", "$QnA Answer");
-			echo '<span class="Tag QnA-Box QnA-'.$QnA.'">' . $Text . '</span>';
-		}
+		// This post has been tagged with 'best answer'. Show a non-link icon and message
+		$Text = T("QnA Accepted Answer", "Accepted Answer");
+		echo '<span id="AcceptedComment' . $CommentID . '" class="Tag QnA-Box QnA-Accepted ' . $AcceptedElementCssClass . '">' . $Text . '</span>';
 
-		if( Gdn::Session()->CheckPermission('Garden.Moderation.Manage') ){
-			echo ' <span class="MItem">'.Anchor(T('Reject', 'Reject'), '/discussion/qna/reject?'.$Query, array('class' => 'QnA-No LargeButton', 'title' => T('Reject this answer.'))).'</span> ';
+		if(Gdn::Session()->CheckPermission('Garden.Moderation.Manage')){
+			echo '<span class="MItem">'.Anchor(T('Reject', 'Reject'), '/discussion/qna/reject?'.$Query, array('class' => 'QnA-No LargeButton', 'title' => T('Reject this answer.'))).'</span> ';
 		}
 
 		// 140617 - D.Zanella
@@ -312,12 +327,17 @@ class QnAPlugin extends Gdn_Plugin {
 					Anchor(Gdn_Format::Text($Discussion['Name']), "/discussion/{$Discussion['DiscussionID']}/".Gdn_Format::Url($Discussion['Name'])),
 					$Comment['InsertUserID'],
 					"/discussion/comment/{$Comment['CommentID']}/#Comment_{$Comment['CommentID']}",
-					TRUE
+					true
 				);
 			}
 		}
 
-		Redirect("/discussion/comment/{$Comment['CommentID']}#Comment_{$Comment['CommentID']}");
+		if(in_array($Sender->DeliveryType(), array(DELIVERY_TYPE_DATA, DELIVERY_TYPE_BOOL))) {
+			$Sender->Render();
+		}
+		else {
+			Redirect("/discussion/comment/{$Comment['CommentID']}#Comment_{$Comment['CommentID']}");
+		}
 	}
 
 	public function DiscussionModel_BeforeGet_Handler($Sender, $Args) {
@@ -595,6 +615,9 @@ class QnAPlugin extends Gdn_Plugin {
 			$QuestionModule = new NewQuestionModule($Sender, 'plugins/QnA');
 			$Sender->AddModule($QuestionModule);
 		}
+
+		$Sender->AddDefinition('Qna_Action_Accept', T('Accept', 'Accept'));
+		$Sender->AddDefinition('QnA_Accepted_Answer', T('QnA Accepted Answer', 'Accepted'));
 	}
 
 	/**
@@ -726,5 +749,37 @@ class QnAPlugin extends Gdn_Plugin {
 
 		$Sender->View = 'discussion';
 		$Sender->EditDiscussion($DiscussionID, $DraftID);
+	}
+
+	/**
+	 * Adds a popup template element at the end of the body. It will be used to
+	 * ask for confirmation before accepting an answer.
+	 *
+	 * @param Gdn_Controller Sender
+	 */
+	public function DiscussionController_AfterBody_Handler($Sender) {
+		echo '
+			<div id="QnA_ConfirmAccept" class="Hidden">
+				<div class="Overlay">
+					<div id="{popup.id}" class="Popup">
+						<div class="Border">
+							<div class="Body">
+								<div class="Content">
+									<h3>' . T('QnA_Accept_PopupConfirmation_Title', 'Would you like to accept this answer?') . '</h3>' .
+									'<span>' .
+									T('QnA_Accept_PopupConfirmation_Message', 'You may not receive any further answers once you confirm
+										this action') .
+									'</span>
+								</div>
+								<div class="Footer">
+									<input type="button" class="Button Okay" value="Okay" />
+									<input type="button" class="Button Cancel" value="Cancel" />
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		';
 	}
 }

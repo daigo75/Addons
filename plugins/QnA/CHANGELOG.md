@@ -1,5 +1,8 @@
 #QnA plugin for Vanilla Forums - Change log
 
+####14.07.16.001
+* Added selection of best answer via Ajax.
+
 ####14.07.03.001
 * Changed rendering of "Best Answer" button to simplify styling.
 * Removed unneeded definition.
