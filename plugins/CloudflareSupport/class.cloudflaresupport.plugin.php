@@ -11,7 +11,7 @@
  *	1.2		Fix bad method call
  *
  * @author Tim Gunter <tim@vanillaforums.com>
- * @author Diego Zanella <diego@pathtoenlightenment.net>
+ * @author Diego Zanella <diego@aelia.co>
  * @copyright 2003 Vanilla Forums, Inc
  * @license http://www.opensource.org/licenses/gpl-2.0.php GPL
  * @package Addons
