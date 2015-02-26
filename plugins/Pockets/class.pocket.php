@@ -213,7 +213,7 @@ class Pocket {
          $Plugin = Gdn::PluginManager()->GetPluginInstance('PocketsPlugin', Gdn_PluginManager::ACCESS_CLASSNAME);
       $Plugin->EventArguments['Pocket'] = $this;
       $Plugin->FireEvent('ToString');
-      
+
       return Gdn_Format::To($this->Body, $this->Format);
    }
 

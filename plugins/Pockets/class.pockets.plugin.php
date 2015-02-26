@@ -12,7 +12,7 @@ Contact Vanilla Forums Inc. at support [at] vanillaforums [dot] com
 $PluginInfo['Pockets'] = array(
    'Name' => 'Pockets',
    'Description' => 'Administrators may add raw HTML to various places on the site. This plugin is very powerful, but can easily break your site if you make a mistake.',
-   'Version' => '1.2',
+   'Version' => '1.3',
    'Author' => "Todd Burry",
    'AuthorEmail' => 'todd@vanillaforums.com',
    'AuthorUrl' => 'http://vanillaforums.org/profile/todd',
@@ -33,7 +33,7 @@ class PocketsPlugin extends Gdn_Plugin {
     */
    protected $_Counters = array();
 
-   public $Locations = array(
+   public $DefaultLocations = array(
       'Content' => array('Name' => 'Content'),
       'Panel' => array('Name' => 'Panel'),
       'BetweenDiscussions' => array('Name' => 'Between Discussions', 'Wrap' => array('<li>', '</li>')),
@@ -52,6 +52,16 @@ class PocketsPlugin extends Gdn_Plugin {
 
    /** Whether or not to display test items for all pockets. */
    public $TestMode = NULL;
+
+	 public function Locations() {
+		if(empty($this->_Locations)) {
+			$this->_Locations = $this->DefaultLocations;
+			$this->EventArguments['Locations'] = &$this->_Locations;
+			$this->FireEvent('GetLocations');
+			$this->_Locations = $this->EventArguments['Locations'];
+		}
+		return $this->_Locations;
+	 }
 
    public function Base_Render_Before($Sender) {
       if ($this->TestMode === NULL)
@@ -111,6 +121,14 @@ class PocketsPlugin extends Gdn_Plugin {
       $this->ProcessPockets($Sender, 'AfterComments');
       //echo '<li>'.$this->TestHtml("BetweenComments").'</li>';
    }
+
+	 public function Base_CustomPocket_Handler($Sender, $Args) {
+		$PocketID = GetValue('PocketID', $Args);
+		if(empty($PocketID)) {
+			return;
+		}
+		$this->ProcessPockets($Sender, $PocketID);
+	 }
 
    /** Main list for a pocket management.
     *
@@ -259,7 +277,7 @@ class PocketsPlugin extends Gdn_Plugin {
 
       $Sender->Form = $Form;
 
-      $Sender->SetData('Locations', $this->Locations);
+      $Sender->SetData('Locations', $this->Locations());
       $Sender->SetData('LocationsArray', $this->GetLocationsArray());
       $Sender->SetData('Pages', array('' => '('.T('All').')', 'activity' => 'activity', 'comments' => 'comments', 'dashboard' => 'dashboard', 'discussions' => 'discussions', 'inbox' => 'inbox', 'profile' => 'profile'));
 
@@ -302,7 +320,7 @@ class PocketsPlugin extends Gdn_Plugin {
 
    public function GetLocationsArray() {
       $Result = array();
-      foreach ($this->Locations as $Key => $Value) {
+      foreach ($this->Locations() as $Key => $Value) {
          $Result[$Key] = GetValue('Name', $Value, $Key);
       }
       return $Result;
@@ -362,10 +380,11 @@ class PocketsPlugin extends Gdn_Plugin {
       $Data['Count'] = $Count;
       $Data['PageName'] = Pocket::PageName($Sender);
 
-      $LocationOptions = GetValue($Location, $this->Locations, array());
+			$Locations = $this->Locations();
+      $LocationOptions = GetValue($Location, $Locations, array());
 
-      if ($this->TestMode && array_key_exists($Location, $this->Locations) && Gdn::Session()->CheckPermission('Plugins.Pockets.Manage')) {
-         $LocationName = GetValue("Name", $this->Locations, $Location);
+      if ($this->TestMode && array_key_exists($Location, $Locations) && Gdn::Session()->CheckPermission('Plugins.Pockets.Manage')) {
+         $LocationName = GetValue("Name", $Locations, $Location);
          echo
             GetValueR('Wrap.0', $LocationOptions, ''),
             "<div class=\"TestPocket\"><h3>$LocationName ($Count)</h3></div>",
